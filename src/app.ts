@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import authRoutes from './routes/authRoutes';
 import feedbackRoutes from './routes/feedbackRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { successResponse } from './types/response';
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
 
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
+app.use('/api/auth', authRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
 // ─── Error Handling ──────────────────────────────────────────────────────────
