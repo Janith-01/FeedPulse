@@ -1,7 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
-
 export interface IFeedback extends Document {
   title: string;
   description: string;
@@ -14,89 +12,60 @@ export interface IFeedback extends Document {
   ai_priority?: number;
   ai_summary?: string;
   ai_tags?: string[];
-  ai_processed: boolean;
+  ai_processed?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// ─── Email Validator ─────────────────────────────────────────────────────────
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// ─── Schema ──────────────────────────────────────────────────────────────────
-
-const FeedbackSchema: Schema = new Schema<IFeedback>(
+const feedbackSchema = new Schema<IFeedback>(
   {
     title: {
       type: String,
-      required: [true, 'Title is required'],
-      maxlength: [120, 'Title cannot exceed 120 characters'],
-      trim: true,
+      required: true,
+      maxlength: 120,
     },
     description: {
       type: String,
-      required: [true, 'Description is required'],
-      minlength: [20, 'Description must be at least 20 characters'],
-      trim: true,
+      required: true,
+      minlength: 20,
     },
     category: {
       type: String,
-      enum: {
-        values: ['Bug', 'Feature Request', 'Improvement', 'Other'],
-        message: '{VALUE} is not a valid category',
-      },
-      required: [true, 'Category is required'],
+      enum: ['Bug', 'Feature Request', 'Improvement', 'Other'],
+      required: true,
     },
     status: {
       type: String,
-      enum: {
-        values: ['New', 'In Review', 'Resolved'],
-        message: '{VALUE} is not a valid status',
-      },
+      enum: ['New', 'In Review', 'Resolved'],
       default: 'New',
     },
     submitterName: {
       type: String,
-      trim: true,
     },
     submitterEmail: {
       type: String,
-      trim: true,
-      lowercase: true,
-      validate: {
-        validator: function (value: string) {
-          if (!value) return true; // optional field
-          return emailRegex.test(value);
-        },
-        message: '{VALUE} is not a valid email address',
-      },
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        'Please provide a valid email address',
+      ],
     },
-
-    // ─── AI-Populated Fields ───────────────────────────────────────────
-
     ai_category: {
       type: String,
-      trim: true,
     },
     ai_sentiment: {
       type: String,
-      enum: {
-        values: ['Positive', 'Neutral', 'Negative'],
-        message: '{VALUE} is not a valid sentiment',
-      },
+      enum: ['Positive', 'Neutral', 'Negative'],
     },
     ai_priority: {
       type: Number,
-      min: [1, 'Priority must be at least 1'],
-      max: [10, 'Priority cannot exceed 10'],
+      min: 1,
+      max: 10,
     },
     ai_summary: {
       type: String,
-      trim: true,
     },
     ai_tags: {
       type: [String],
-      default: [],
     },
     ai_processed: {
       type: Boolean,
@@ -104,19 +73,16 @@ const FeedbackSchema: Schema = new Schema<IFeedback>(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt automatically
+    timestamps: true,
   }
 );
 
-// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Indexes
+feedbackSchema.index({ status: 1 });
+feedbackSchema.index({ category: 1 });
+feedbackSchema.index({ ai_priority: -1 });
+feedbackSchema.index({ createdAt: -1 });
 
-FeedbackSchema.index({ status: 1 });
-FeedbackSchema.index({ category: 1 });
-FeedbackSchema.index({ ai_priority: 1 });
-FeedbackSchema.index({ createdAt: -1 });
-
-// ─── Model Export ────────────────────────────────────────────────────────────
-
-const Feedback = mongoose.model<IFeedback>('Feedback', FeedbackSchema);
+const Feedback = mongoose.model<IFeedback>('Feedback', feedbackSchema);
 
 export default Feedback;

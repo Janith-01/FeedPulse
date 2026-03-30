@@ -1,32 +1,37 @@
+import express, { type Request, type Response } from 'express';
+import feedbackRoutes from './routes/feedbackRoutes';
+import authRoutes from './routes/authRoutes';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Load environment variables before anything else
+// Load environment variables
 dotenv.config();
 
-import app from './app';
-import connectDB from './config/database';
+const app = express();
+app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/auth', authRoutes);
 
-/**
- * Start the server after establishing a database connection.
- */
-const startServer = async (): Promise<void> => {
-  try {
-    // Connect to MongoDB
-    await connectDB();
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/feedpulse';
 
-    // Start Express server
-    app.listen(PORT, () => {
-      console.log(`\n🚀 FeedPulse API Server`);
-      console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
-      console.log(`   Port        : ${PORT}`);
-      console.log(`   URL         : http://localhost:${PORT}\n`);
-    });
-  } catch (error: any) {
-    console.error(`❌ Failed to start server: ${error.message}`);
+// Connect to MongoDB
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB successfully');
+  })
+  .catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
     process.exit(1);
-  }
-};
+  });
 
-startServer();
+// Basic testing route
+app.get('/', (req: Request, res: Response) => {
+  res.json({ message: 'FeedPulse API is running' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
