@@ -3,11 +3,13 @@ import feedbackRoutes from './routes/feedbackRoutes';
 import authRoutes from './routes/authRoutes';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+app.use(cors()); // Enable CORS for ALL origins in dev
 app.use(express.json());
 
 app.use('/api/feedback', feedbackRoutes);
