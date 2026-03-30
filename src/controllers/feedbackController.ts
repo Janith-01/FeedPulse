@@ -1,6 +1,7 @@
 import { type Request, type Response } from 'express';
 import Feedback, { IFeedback } from '../models/Feedback';
 import { sendResponse } from '../utils/responseHelper';
+import { analyzeFeedback } from '../services/gemini.service';
 
 // Submit new feedback (Public)
 export const createFeedback = async (req: Request, res: Response) => {
@@ -35,6 +36,24 @@ export const createFeedback = async (req: Request, res: Response) => {
     });
 
     const savedFeedback = await newFeedback.save();
+
+    // Trigger AI Analysis in the background (Non-blocking for final response)
+    analyzeFeedback(title, description)
+      .then(async (aiData) => {
+        if (aiData) {
+          await Feedback.findByIdAndUpdate(savedFeedback._id, {
+            ai_category: aiData.category,
+            ai_sentiment: aiData.sentiment,
+            ai_priority: aiData.priority_score,
+            ai_summary: aiData.summary,
+            ai_tags: aiData.tags,
+            ai_processed: true,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Background AI processing failed:', err);
+      });
 
     return sendResponse(res, 201, true, savedFeedback, 'Feedback submitted successfully');
   } catch (error: any) {

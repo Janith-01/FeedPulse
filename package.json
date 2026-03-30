@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/Janith-01/FeedPulse#readme",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
