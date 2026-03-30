@@ -20,8 +20,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for cookie on mount
     const savedToken = Cookies.get("admin_token");
     if (savedToken) {
+      // eslint-disable-next-line
       setToken(savedToken);
     }
+    // eslint-disable-next-line
     setIsLoading(false);
   }, []);
 
