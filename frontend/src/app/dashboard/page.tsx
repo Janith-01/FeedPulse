@@ -13,7 +13,9 @@ import {
   LayoutDashboard,
   MessageSquare,
   Clock,
-  Zap
+  Zap,
+  Sparkles,
+  X
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -155,6 +157,38 @@ function DashboardView({ token }: { token: string }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
 
+  // Theme summary
+  interface Theme {
+    title: string;
+    description: string;
+  }
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [themesOpen, setThemesOpen] = useState(false);
+  const [themesLoading, setThemesLoading] = useState(false);
+  const [themesError, setThemesError] = useState("");
+
+  const fetchThemes = async () => {
+    setThemesLoading(true);
+    setThemesError("");
+    setThemesOpen(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/feedback/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await res.json();
+      if (result.success && result.data?.themes) {
+        setThemes(result.data.themes);
+      } else {
+        setThemesError(result.message || "Failed to generate themes");
+      }
+    } catch (err) {
+      setThemesError("Network error. Please try again.");
+    } finally {
+      setThemesLoading(false);
+    }
+  };
+
   const fetchFeedback = async () => {
     setLoading(true);
     try {
@@ -272,7 +306,16 @@ function DashboardView({ token }: { token: string }) {
             </p>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            {/* AI Themes Button */}
+            <button
+              onClick={fetchThemes}
+              disabled={themesLoading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30 disabled:opacity-60 disabled:cursor-not-allowed group"
+            >
+              <Sparkles className={`w-4 h-4 ${themesLoading ? 'animate-spin' : 'group-hover:rotate-12 transition-transform'}`} />
+              {themesLoading ? 'Analyzing...' : 'AI Themes'}
+            </button>
             {/* Category Filter */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -315,6 +358,64 @@ function DashboardView({ token }: { token: string }) {
             </div>
           </div>
         </div>
+
+        {/* AI Themes Panel */}
+        {themesOpen && (
+          <div className="mb-8 bg-neutral-900/60 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-6 relative overflow-hidden">
+            {/* Decorative glow */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-500/10 p-2 rounded-lg border border-indigo-500/20">
+                  <Sparkles className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">AI Theme Analysis</h3>
+                  <p className="text-xs text-neutral-500">Top themes from the last 7 days of feedback</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setThemesOpen(false)}
+                className="p-2 rounded-lg hover:bg-neutral-800 text-neutral-500 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {themesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-28 bg-neutral-800/50 rounded-xl border border-neutral-700/50" />
+                ))}
+              </div>
+            ) : themesError ? (
+              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {themesError}
+              </div>
+            ) : themes.length === 0 ? (
+              <p className="text-neutral-500 text-sm text-center py-6">No themes found. Submit more feedback to generate insights.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {themes.map((theme, i) => (
+                  <div
+                    key={i}
+                    className="bg-neutral-950/60 border border-neutral-800 rounded-xl p-5 hover:border-indigo-500/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                        #{i + 1}
+                      </span>
+                      <h4 className="text-sm font-bold text-white">{theme.title}</h4>
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-relaxed">{theme.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Data Loop */}
         {loading ? (

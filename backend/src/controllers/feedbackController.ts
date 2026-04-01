@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import Feedback, { IFeedback } from '../models/Feedback';
 import { sendResponse } from '../utils/responseHelper';
-import { analyzeFeedback } from '../services/gemini.service';
+import { analyzeFeedback, generateThemeSummary } from '../services/gemini.service';
 
 // Submit new feedback (Public)
 export const createFeedback = async (req: Request, res: Response) => {
@@ -148,5 +148,40 @@ export const deleteFeedback = async (req: Request, res: Response) => {
     return sendResponse(res, 200, true, null, 'Feedback item deleted successfully');
   } catch (error: any) {
     return sendResponse(res, 500, false, null, 'Error deleting feedback item', error.message);
+  }
+};
+
+// Generate AI theme summary from recent feedback (Admin)
+export const getSummary = async (req: Request, res: Response) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentFeedback = await Feedback.find({
+      ai_processed: true,
+      createdAt: { $gte: sevenDaysAgo },
+    }).select('ai_summary');
+
+    if (recentFeedback.length === 0) {
+      return sendResponse(res, 200, true, { themes: [] }, 'No AI-processed feedback found in the last 7 days');
+    }
+
+    const summaries = recentFeedback
+      .map((f) => f.ai_summary)
+      .filter((s): s is string => !!s);
+
+    if (summaries.length === 0) {
+      return sendResponse(res, 200, true, { themes: [] }, 'No AI summaries available');
+    }
+
+    const themeResult = await generateThemeSummary(summaries);
+
+    if (!themeResult) {
+      return sendResponse(res, 503, false, null, 'AI theme analysis is temporarily unavailable', 'Gemini service error');
+    }
+
+    return sendResponse(res, 200, true, themeResult, 'Theme summary generated successfully');
+  } catch (error: any) {
+    return sendResponse(res, 500, false, null, 'Error generating summary', error.message);
   }
 };

@@ -48,3 +48,49 @@ export const analyzeFeedback = async (
     return null;
   }
 };
+
+// ==========================================
+// Theme Summary Generation
+// ==========================================
+
+export interface ITheme {
+  title: string;
+  description: string;
+}
+
+export interface IThemeSummaryResult {
+  themes: ITheme[];
+}
+
+export const generateThemeSummary = async (
+  summaries: string[]
+): Promise<IThemeSummaryResult | null> => {
+  try {
+    const joined = summaries.join('\n- ');
+    const prompt = `
+      Here are summaries of recent product feedback:
+      - ${joined}
+
+      Return ONLY valid JSON with this shape:
+      { "themes": [ { "title": "string", "description": "string" } ] }
+      List the top 3 most common themes.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    const cleanedText = text.replace(/```json|```/gi, '').trim();
+
+    try {
+      const parsedData = JSON.parse(cleanedText);
+      return parsedData as IThemeSummaryResult;
+    } catch (parseError) {
+      console.error('Error parsing Gemini theme summary JSON:', cleanedText);
+      return null;
+    }
+  } catch (error) {
+    console.error('Gemini Theme Summary Error:', error);
+    return null;
+  }
+};
