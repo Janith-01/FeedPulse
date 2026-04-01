@@ -4,6 +4,7 @@ import authRoutes from './routes/authRoutes';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { geminiBreaker } from './utils/circuitBreaker';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +33,19 @@ mongoose
 // Basic testing route
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'FeedPulse API is running' });
+});
+
+// Health endpoint — circuit breaker status (public)
+app.get('/api/health', (req: Request, res: Response) => {
+  const status = geminiBreaker.getStatus();
+  res.json({
+    success: true,
+    data: {
+      uptime: process.uptime(),
+      gemini: status,
+    },
+    message: 'Health check OK',
+  });
 });
 
 app.listen(PORT, () => {

@@ -13,6 +13,7 @@ export interface IFeedback extends Document {
   ai_summary?: string;
   ai_tags?: string[];
   ai_processed?: boolean;
+  ai_last_error?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +71,9 @@ const feedbackSchema = new Schema<IFeedback>(
     ai_processed: {
       type: Boolean,
       default: false,
+    },
+    ai_last_error: {
+      type: String,
     },
   },
   {

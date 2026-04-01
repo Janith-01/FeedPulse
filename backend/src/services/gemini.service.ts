@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
+import { geminiBreaker } from '../utils/circuitBreaker';
 
 dotenv.config();
 
@@ -18,6 +19,12 @@ export const analyzeFeedback = async (
   title: string,
   description: string
 ): Promise<IGeminiFeedbackAnalysis | null> => {
+  // Circuit breaker guard
+  if (geminiBreaker.isOpen()) {
+    console.log('[Gemini] Circuit OPEN — skipping analysis');
+    return null;
+  }
+
   try {
     const prompt = `
       Analyze this product feedback. 
@@ -38,13 +45,16 @@ export const analyzeFeedback = async (
     
     try {
       const parsedData = JSON.parse(cleanedText);
+      geminiBreaker.onSuccess();
       return parsedData as IGeminiFeedbackAnalysis;
     } catch (parseError) {
       console.error('Error parsing Gemini JSON response:', cleanedText);
+      // Parse errors are not Gemini outages — don't trip the breaker
       return null;
     }
   } catch (error) {
     console.error('Gemini API Error:', error);
+    geminiBreaker.onFailure();
     return null;
   }
 };
@@ -65,6 +75,12 @@ export interface IThemeSummaryResult {
 export const generateThemeSummary = async (
   summaries: string[]
 ): Promise<IThemeSummaryResult | null> => {
+  // Circuit breaker guard
+  if (geminiBreaker.isOpen()) {
+    console.log('[Gemini] Circuit OPEN — skipping theme summary');
+    return null;
+  }
+
   try {
     const joined = summaries.join('\n- ');
     const prompt = `
@@ -84,6 +100,7 @@ export const generateThemeSummary = async (
 
     try {
       const parsedData = JSON.parse(cleanedText);
+      geminiBreaker.onSuccess();
       return parsedData as IThemeSummaryResult;
     } catch (parseError) {
       console.error('Error parsing Gemini theme summary JSON:', cleanedText);
@@ -91,6 +108,7 @@ export const generateThemeSummary = async (
     }
   } catch (error) {
     console.error('Gemini Theme Summary Error:', error);
+    geminiBreaker.onFailure();
     return null;
   }
 };
