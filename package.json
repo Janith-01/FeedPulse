@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+
+    "dev": "concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+
+    "start-all": "concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" \"npm run start-all:backend\" \"npm run start-all:frontend\"",
+    "start-all:backend": "npm run build --prefix backend && npm run start --prefix backend",
+    "start-all:frontend": "npm run build --prefix frontend && npm run start --prefix frontend"
   },
   "repository": {
     "type": "git",
@@ -20,6 +26,7 @@
   "homepage": "https://github.com/Janith-01/FeedPulse#readme",
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "concurrently": "^9.1.2",
     "typescript": "^6.0.2"
   }
 }

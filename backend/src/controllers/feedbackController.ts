@@ -2,6 +2,7 @@ import { type Request, type Response } from 'express';
 import Feedback, { IFeedback } from '../models/Feedback';
 import { sendResponse } from '../utils/responseHelper';
 import { analyzeFeedback, generateThemeSummary } from '../services/gemini.service';
+import { fallbackAnalyze } from '../services/fallback.service';
 
 // Submit new feedback (Public)
 export const createFeedback = async (req: Request, res: Response) => {
@@ -41,6 +42,7 @@ export const createFeedback = async (req: Request, res: Response) => {
     analyzeFeedback(title, description)
       .then(async (aiData) => {
         if (aiData) {
+          // ✅ Gemini succeeded
           await Feedback.findByIdAndUpdate(savedFeedback._id, {
             ai_category: aiData.category,
             ai_sentiment: aiData.sentiment,
@@ -49,13 +51,21 @@ export const createFeedback = async (req: Request, res: Response) => {
             ai_tags: aiData.tags,
             ai_processed: true,
             ai_last_error: null,
-            ai_retry_count: 0, // Reset on success
+            ai_retry_count: 0,
           });
         } else {
-          // null return — either circuit breaker is open or Gemini failed
+          // ⚠️ Gemini unavailable (circuit OPEN, API error, or parse failure)
+          // Apply the rule-based fallback so the item is never left unprocessed.
+          console.log('[FeedbackController] Gemini unavailable — applying rule-based fallback');
+          const fallback = fallbackAnalyze(title, description);
           await Feedback.findByIdAndUpdate(savedFeedback._id, {
-            ai_last_error: 'AI service unavailable or returned no result',
-            $inc: { ai_retry_count: 1 }
+            ai_category: savedFeedback.category, // preserve user-submitted category
+            ai_sentiment: fallback.sentiment,
+            ai_priority: fallback.priority_score,
+            ai_summary: fallback.summary,
+            ai_tags: fallback.tags,
+            ai_processed: true,
+            ai_last_error: 'Used rule-based fallback — Gemini unavailable',
           });
         }
       })

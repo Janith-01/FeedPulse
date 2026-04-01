@@ -145,6 +145,7 @@ interface FeedbackItem {
   ai_sentiment?: string;
   ai_priority?: number;
   ai_summary?: string;
+  ai_last_error?: string;
   createdAt: string;
 }
 
@@ -515,15 +516,22 @@ function DashboardView({ token }: { token: string }) {
                       </span>
                       {/* Sentiment Badge */}
                       {item.ai_sentiment ? (
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                          item.ai_sentiment === 'Positive'
-                            ? 'bg-green-100 text-green-800'
-                            : item.ai_sentiment === 'Negative'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {item.ai_sentiment}
-                        </span>
+                        item.ai_last_error?.includes('fallback') ? (
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-neutral-700 text-neutral-400 border border-neutral-600 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 inline-block" />
+                            Rule-based
+                          </span>
+                        ) : (
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                            item.ai_sentiment === 'Positive'
+                              ? 'bg-green-100 text-green-800'
+                              : item.ai_sentiment === 'Negative'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {item.ai_sentiment}
+                          </span>
+                        )
                       ) : (
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-neutral-700 text-neutral-400 animate-pulse">
                           Analyzing…
