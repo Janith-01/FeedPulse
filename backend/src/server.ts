@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import feedbackRoutes from './routes/feedbackRoutes';
 import authRoutes from './routes/authRoutes';
+import deadQueueRoutes from './routes/deadQueueRoutes';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/dead-queue', deadQueueRoutes);
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/feedpulse';

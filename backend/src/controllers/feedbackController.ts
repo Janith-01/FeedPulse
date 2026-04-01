@@ -49,11 +49,13 @@ export const createFeedback = async (req: Request, res: Response) => {
             ai_tags: aiData.tags,
             ai_processed: true,
             ai_last_error: null,
+            ai_retry_count: 0, // Reset on success
           });
         } else {
           // null return — either circuit breaker is open or Gemini failed
           await Feedback.findByIdAndUpdate(savedFeedback._id, {
-            ai_last_error: 'AI service unavailable',
+            ai_last_error: 'AI service unavailable or returned no result',
+            $inc: { ai_retry_count: 1 }
           });
         }
       })
@@ -61,6 +63,7 @@ export const createFeedback = async (req: Request, res: Response) => {
         console.error('Background AI processing failed:', err);
         Feedback.findByIdAndUpdate(savedFeedback._id, {
           ai_last_error: err.message || 'Unknown AI processing error',
+          $inc: { ai_retry_count: 1 }
         }).catch(() => {});
       });
 

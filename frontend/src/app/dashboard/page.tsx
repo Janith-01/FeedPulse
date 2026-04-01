@@ -15,7 +15,8 @@ import {
   Clock,
   Zap,
   Sparkles,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 
 export default function AdminDashboardPage() {
@@ -167,6 +168,46 @@ function DashboardView({ token }: { token: string }) {
   const [themesLoading, setThemesLoading] = useState(false);
   const [themesError, setThemesError] = useState("");
 
+  // Dead Letter Queue
+  const [deadCount, setDeadCount] = useState(0);
+  const [retryingDead, setRetryingDead] = useState(false);
+
+  const fetchDeadQueue = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/admin/dead-queue`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await res.json();
+      if (result.success) {
+        setDeadCount(result.data.count);
+      }
+    } catch (err) {
+      console.error("Failed to fetch dead queue count", err);
+    }
+  };
+
+  const triggerDeadRetry = async () => {
+    setRetryingDead(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+      const res = await fetch(`${apiUrl}/api/admin/dead-queue/retry-all`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await res.json();
+      if (result.success) {
+        // Refresh everything
+        fetchDeadQueue();
+        fetchFeedback();
+      }
+    } catch (err) {
+      console.error("Failed to retry dead items", err);
+    } finally {
+      setRetryingDead(false);
+    }
+  };
+
   const fetchThemes = async () => {
     setThemesLoading(true);
     setThemesError("");
@@ -216,6 +257,7 @@ function DashboardView({ token }: { token: string }) {
 
   useEffect(() => {
     fetchFeedback();
+    fetchDeadQueue();
   }, [statusFilter, categoryFilter, token]);
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -296,6 +338,29 @@ function DashboardView({ token }: { token: string }) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         
+        {/* Dead Queue Banner */}
+        {deadCount > 0 && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-500/20 p-2 rounded-xl text-amber-400">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">{deadCount} items failed AI analysis</p>
+                <p className="text-xs text-neutral-400">Analysis stopped after 3+ attempts. You can trigger a manual retry.</p>
+              </div>
+            </div>
+            <button
+              onClick={triggerDeadRetry}
+              disabled={retryingDead}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${retryingDead ? 'animate-spin' : ''}`} />
+              {retryingDead ? 'Retrying...' : 'Retry All'}
+            </button>
+          </div>
+        )}
+
         {/* Header & Filters */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>

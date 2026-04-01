@@ -13,6 +13,7 @@ export interface IFeedback extends Document {
   ai_summary?: string;
   ai_tags?: string[];
   ai_processed?: boolean;
+  ai_retry_count?: number;
   ai_last_error?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -72,6 +73,10 @@ const feedbackSchema = new Schema<IFeedback>(
       type: Boolean,
       default: false,
     },
+    ai_retry_count: {
+      type: Number,
+      default: 0,
+    },
     ai_last_error: {
       type: String,
     },
@@ -86,6 +91,7 @@ feedbackSchema.index({ status: 1 });
 feedbackSchema.index({ category: 1 });
 feedbackSchema.index({ ai_priority: -1 });
 feedbackSchema.index({ createdAt: -1 });
+feedbackSchema.index({ ai_processed: 1, ai_retry_count: 1 }); // Dead letter query
 
 const Feedback = mongoose.model<IFeedback>('Feedback', feedbackSchema);
 
