@@ -347,6 +347,22 @@ function DashboardView({ token }: { token: string }) {
                       <span className="text-xs font-semibold px-2.5 py-1 bg-neutral-800 text-neutral-300 rounded-md border border-neutral-700 uppercase tracking-wide">
                         {item.category}
                       </span>
+                      {/* Sentiment Badge */}
+                      {item.ai_sentiment ? (
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                          item.ai_sentiment === 'Positive'
+                            ? 'bg-green-100 text-green-800'
+                            : item.ai_sentiment === 'Negative'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {item.ai_sentiment}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-neutral-700 text-neutral-400 animate-pulse">
+                          Analyzing…
+                        </span>
+                      )}
                       <div className="flex items-center text-xs text-neutral-500 font-medium">
                         <Clock className="w-3.5 h-3.5 mr-1" />
                         {format(new Date(item.createdAt), 'MMM d, yyyy • h:mm a')}
