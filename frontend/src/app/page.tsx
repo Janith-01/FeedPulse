@@ -159,11 +159,10 @@ export default function Home() {
             <button
               type="submit"
               disabled={status === "loading"}
-              className={`w-full py-4 rounded-xl font-bold transition-all ${
-                status === "loading"
+              className={`w-full py-4 rounded-xl font-bold transition-all ${status === "loading"
                   ? "bg-neutral-100 dark:bg-neutral-700 text-neutral-400 cursor-not-allowed"
                   : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-none hover:-translate-y-0.5 active:translate-y-0"
-              }`}
+                }`}
             >
               {status === "loading" ? "Submitting..." : "Send Feedback"}
             </button>
@@ -182,7 +181,7 @@ export default function Home() {
           </form>
         </div>
       </div>
-      
+
       <footer className="mt-12 text-sm text-neutral-400 flex items-center gap-2">
         Powered by <span className="font-bold text-neutral-600 dark:text-neutral-300 tracking-tight">FeedPulse AI</span>
       </footer>
